@@ -57,9 +57,9 @@ df = user_input_features()
 
 # Print specified input parameters
 st.header('User inputs:')
-params = df.T
-params.columns = ["Values"]
-st.write(params)
+params1 = df.iloc[:,:6]
+params2 = df.iloc[:,6:]
+st.write(params1, params2)
 st.write('---')
 
 # Build Regression Model
@@ -68,7 +68,7 @@ model.fit(X, Y)
 # Apply Model to Make Prediction
 prediction = model.predict(df)
 
-st.header('Prediction of MEDV')
+st.header('Predicted value:')
 st.write(prediction[0])
 st.write('---')
 
