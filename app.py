@@ -1,16 +1,15 @@
-import streamlit as st
-import pandas as pd
-import shap
 import matplotlib.pyplot as plt
-from sklearn import datasets
-from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 import pandas as pd
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
-from sklearn.preprocessing import StandardScaler
+import shap
+import streamlit as st
+from sklearn import datasets
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 st.set_page_config(page_title='Home Price Predictor',
@@ -80,6 +79,7 @@ st.write('---')
 # Build Regression Model
 model = RandomForestRegressor()
 model.fit(X, Y)
+
 # Apply Model to Make Prediction
 prediction = model.predict(df)
 
@@ -136,3 +136,34 @@ st.write(f"The prediction with Tensorflow model is {pred * 1000:,}")
 print(np.mean(np.abs(model.predict(X) - Y)))
 print("=================================")
 print(np.mean(np.abs(pipeline.predict(X) - Y)))
+
+import tensorflow as tf
+from tensorflow import keras
+# from sklearn.externals import joblib
+import joblib
+
+# Save the Keras model first:
+pipeline.named_steps['mlp'].model.save('keras_model.h5')
+
+# This hack allows us to save the sklearn pipeline:
+pipeline.named_steps['mlp'].model = None
+
+# Finally, save the pipeline:
+joblib.dump(pipeline, 'tf_pipeline.pkl')
+
+# Load the pipeline first:
+pipeline = joblib.load('tf_pipeline.pkl')
+
+# Then, load the Keras model:
+pipeline.named_steps['mlp'].model = keras.models.load_model('keras_model.h5')
+
+# It can be used to reconstruct the model identically.
+# reconstructed_model = keras.models.load_model("my_h5_model.h5")
+print(np.mean(np.abs(pipeline.predict(X) - Y)))
+
+# Finally, save the pipeline:
+joblib.dump(model, 'tf_pipeline.pkl')
+
+# Load the pipeline first:
+model = joblib.load('tf_pipeline.pkl')
+print(np.mean(np.abs(model.predict(X) - Y)))
