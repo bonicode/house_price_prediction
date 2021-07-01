@@ -4,8 +4,17 @@ import shap
 import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+import pandas as pd
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
 st.set_option('deprecation.showPyplotGlobalUse', False)
-st.set_page_config(page_title='Home Price Predictor', initial_sidebar_state = 'auto')
+st.set_page_config(page_title='Home Price Predictor',
+                   initial_sidebar_state='auto')
 
 st.write("""
 # Home Price Predictor
@@ -22,10 +31,12 @@ Y = pd.DataFrame(boston.target, columns=["MEDV"])
 # Header of Specify Input Parameters
 st.sidebar.header('Specify Input Parameters')
 
+
 def user_input_features():
     CRIM = st.sidebar.slider('CRIM', X.CRIM.min(), X.CRIM.max(), X.CRIM.mean())
     ZN = st.sidebar.slider('ZN', X.ZN.min(), X.ZN.max(), X.ZN.mean())
-    INDUS = st.sidebar.slider('INDUS', X.INDUS.min(), X.INDUS.max(), X.INDUS.mean())
+    INDUS = st.sidebar.slider('INDUS', X.INDUS.min(),
+                              X.INDUS.max(), X.INDUS.mean())
     CHAS = st.sidebar.slider('CHAS', X.CHAS.min(), X.CHAS.max(), X.CHAS.mean())
     NOX = st.sidebar.slider('NOX', X.NOX.min(), X.NOX.max(), X.NOX.mean())
     RM = st.sidebar.slider('RM', X.RM.min(), X.RM.max(), X.RM.mean())
@@ -33,9 +44,11 @@ def user_input_features():
     DIS = st.sidebar.slider('DIS', X.DIS.min(), X.DIS.max(), X.DIS.mean())
     RAD = st.sidebar.slider('RAD', X.RAD.min(), X.RAD.max(), X.RAD.mean())
     TAX = st.sidebar.slider('TAX', X.TAX.min(), X.TAX.max(), X.TAX.mean())
-    PTRATIO = st.sidebar.slider('PTRATIO', X.PTRATIO.min(), X.PTRATIO.max(), X.PTRATIO.mean())
+    PTRATIO = st.sidebar.slider(
+        'PTRATIO', X.PTRATIO.min(), X.PTRATIO.max(), X.PTRATIO.mean())
     B = st.sidebar.slider('B', X.B.min(), X.B.max(), X.B.mean())
-    LSTAT = st.sidebar.slider('LSTAT', X.LSTAT.min(), X.LSTAT.max(), X.LSTAT.mean())
+    LSTAT = st.sidebar.slider('LSTAT', X.LSTAT.min(),
+                              X.LSTAT.max(), X.LSTAT.mean())
     data = {'CRIM': CRIM,
             'ZN': ZN,
             'INDUS': INDUS,
@@ -52,14 +65,15 @@ def user_input_features():
     features = pd.DataFrame(data, index=[0])
     return features
 
+
 df = user_input_features()
 
 # Main Panel
 
 # Print specified input parameters
 st.header('User inputs:')
-params1 = df.iloc[:,:6]
-params2 = df.iloc[:,6:]
+params1 = df.iloc[:, :6]
+params2 = df.iloc[:, 6:]
 st.write(params1, params2)
 st.write('---')
 
@@ -89,43 +103,36 @@ st.pyplot(bbox_inches='tight')
 
 st.header("Apply Deep Learning with Tensorflow")
 
-# numpy
-import numpy as np
-import pandas as pd
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
-from sklearn.model_selection import cross_val_score
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 
 dataframe = pd.read_csv("housing.csv", delim_whitespace=True, header=None)
 dataset = dataframe.values
 
-X = dataset[:,0:13]
-Y = dataset[:,13]
+X = dataset[:, 0:13]
+Y = dataset[:, 13]
+
 
 def larger_model():
     # create model
     model = Sequential()
-    model.add(Dense(13, input_dim=13, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(13, input_dim=13, activation='relu',
+              kernel_initializer='normal'))
     model.add(Dense(6, activation='relu', kernel_initializer='normal'))
     model.add(Dense(1, kernel_initializer='normal'))
     # Compile model
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
+
 estimators = []
 estimators.append(('standardize', StandardScaler()))
-estimators.append(('mlp', KerasRegressor(build_fn=larger_model, epochs=50, batch_size=5, verbose=0)))
+estimators.append(('mlp', KerasRegressor(
+    build_fn=larger_model, epochs=50, batch_size=5, verbose=0)))
 pipeline = Pipeline(estimators)
 pipeline.fit(X, Y)
 
-pred = pipeline.predict(X)
-print(pred - Y)
+pred = pipeline.predict(df)
+st.write(f"The prediction with Tensorflow model is {pred * 1000:,}")
 
-# pred = pipeline()
-
-print(X)
+print(np.mean(np.abs(model.predict(X) - Y)))
+print("=================================")
+print(np.mean(np.abs(pipeline.predict(X) - Y)))
