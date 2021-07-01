@@ -1,19 +1,28 @@
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
+import sklearn
 import streamlit as st
 from sklearn import datasets
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from tensorflow import keras
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from os.path import exists
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 st.set_page_config(page_title='Home Price Predictor',
                    initial_sidebar_state='auto')
+
+
+boston = datasets.load_boston()
+X = pd.DataFrame(boston.data, columns=boston.feature_names)
+Y = pd.DataFrame(boston.target, columns=["MEDV"])
 
 st.write("""
 # Home Price Predictor
@@ -21,16 +30,9 @@ This app predicts the **Boston Home Price**!
 """)
 st.write('---')
 
-# Loads the Boston House Price Dataset
-boston = datasets.load_boston()
-X = pd.DataFrame(boston.data, columns=boston.feature_names)
-Y = pd.DataFrame(boston.target, columns=["MEDV"])
-
 # Sidebar
 # Header of Specify Input Parameters
 st.sidebar.header('Specify Input Parameters')
-
-
 def user_input_features():
     CRIM = st.sidebar.slider('CRIM', X.CRIM.min(), X.CRIM.max(), X.CRIM.mean())
     ZN = st.sidebar.slider('ZN', X.ZN.min(), X.ZN.max(), X.ZN.mean())
@@ -76,14 +78,74 @@ params2 = df.iloc[:, 6:]
 st.write(params1, params2)
 st.write('---')
 
-# Build Regression Model
-model = RandomForestRegressor()
-model.fit(X, Y)
+# SKLEARN
+model = None
+if exists('sk_pipeline.pkl'):
+    # Load SKLEARN model
+    model = joblib.load('sk_pipeline.pkl')
+else:
+    # Train Regression model
+    model = RandomForestRegressor()
+    model.fit(X, Y)
+    # Save SKLEARN model
+    joblib.dump(model, 'sk_pipeline.pkl')
 
-# Apply Model to Make Prediction
-prediction = model.predict(df)
 
-st.header(f'Predicted home value: ${prediction[0] * 1000:,}')
+# TENSORFLOW
+pipeline = None
+def larger_model():
+    # create model
+    model = Sequential()
+    model.add(Dense(13, input_dim=13, activation='relu',
+            kernel_initializer='normal'))
+    model.add(Dense(6, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(1, kernel_initializer='normal'))
+    # Compile model
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
+
+if exists('tf_pipeline.pkl'):
+    # Load pipeline
+    pipeline = joblib.load('tf_pipeline.pkl')
+    # Load TF model
+    pipeline.named_steps['mlp'].model = keras.models.load_model('keras_model.h5')
+else:
+    # Train Tensorflow model
+    dataframe = pd.read_csv("housing.csv", delim_whitespace=True, header=None)
+    dataset = dataframe.values
+    X = dataset[:, 0:13]
+    Y = dataset[:, 13]
+
+    estimators = []
+    estimators.append(('standardize', StandardScaler()))
+    estimators.append(('mlp', KerasRegressor(
+        build_fn=larger_model, epochs=50, batch_size=5, verbose=0)))
+    pipeline = Pipeline(estimators)
+    pipeline.fit(X, Y)
+    # Save TF model
+    pipeline.named_steps['mlp'].model.save('keras_model.h5')
+    # Save pipeline
+    pipeline.named_steps['mlp'].model = None
+    joblib.dump(pipeline, 'tf_pipeline.pkl')
+
+
+prediction_tf = pipeline.predict(df)
+prediction_sklearn = model.predict(df)
+
+st.header("Predicted Values")
+st.write(f'Predicted value with Sklearn: ${prediction_sklearn[0] * 1000:,.2f}')
+st.write(f"Predicted value with Tensorflow: ${prediction_tf * 1000:,.2f}")
+st.write('---')
+
+
+# sklearn_mae = np.mean(np.abs(model.predict(X) - Y))
+# tf_mae = np.mean(np.abs(pipeline.predict(X) - Y))
+sklearn_mae = 0.7788300395256911
+tf_mae = 2.611664370020388
+
+st.header("Performance Evaluation")
+st.write(f'MAE of Sklearn: ${sklearn_mae * 1000:,.2f}')
+st.write(f"MAE of Tensorflow: {tf_mae * 1000:,.2f}")
 st.write('---')
 
 # Explaining the model's predictions using SHAP values
@@ -100,70 +162,3 @@ st.write('---')
 plt.title('Feature importance based on SHAP values (Bar)')
 shap.summary_plot(shap_values, X, plot_type="bar")
 st.pyplot(bbox_inches='tight')
-
-st.header("Apply Deep Learning with Tensorflow")
-
-
-dataframe = pd.read_csv("housing.csv", delim_whitespace=True, header=None)
-dataset = dataframe.values
-
-X = dataset[:, 0:13]
-Y = dataset[:, 13]
-
-
-def larger_model():
-    # create model
-    model = Sequential()
-    model.add(Dense(13, input_dim=13, activation='relu',
-              kernel_initializer='normal'))
-    model.add(Dense(6, activation='relu', kernel_initializer='normal'))
-    model.add(Dense(1, kernel_initializer='normal'))
-    # Compile model
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    return model
-
-
-estimators = []
-estimators.append(('standardize', StandardScaler()))
-estimators.append(('mlp', KerasRegressor(
-    build_fn=larger_model, epochs=50, batch_size=5, verbose=0)))
-pipeline = Pipeline(estimators)
-pipeline.fit(X, Y)
-
-pred = pipeline.predict(df)
-st.write(f"The prediction with Tensorflow model is {pred * 1000:,}")
-
-print(np.mean(np.abs(model.predict(X) - Y)))
-print("=================================")
-print(np.mean(np.abs(pipeline.predict(X) - Y)))
-
-import tensorflow as tf
-from tensorflow import keras
-# from sklearn.externals import joblib
-import joblib
-
-# Save the Keras model first:
-pipeline.named_steps['mlp'].model.save('keras_model.h5')
-
-# This hack allows us to save the sklearn pipeline:
-pipeline.named_steps['mlp'].model = None
-
-# Finally, save the pipeline:
-joblib.dump(pipeline, 'tf_pipeline.pkl')
-
-# Load the pipeline first:
-pipeline = joblib.load('tf_pipeline.pkl')
-
-# Then, load the Keras model:
-pipeline.named_steps['mlp'].model = keras.models.load_model('keras_model.h5')
-
-# It can be used to reconstruct the model identically.
-# reconstructed_model = keras.models.load_model("my_h5_model.h5")
-print(np.mean(np.abs(pipeline.predict(X) - Y)))
-
-# Finally, save the pipeline:
-joblib.dump(model, 'tf_pipeline.pkl')
-
-# Load the pipeline first:
-model = joblib.load('tf_pipeline.pkl')
-print(np.mean(np.abs(model.predict(X) - Y)))
