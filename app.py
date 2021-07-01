@@ -1,3 +1,5 @@
+from os.path import exists
+
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +15,6 @@ from tensorflow import keras
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
-from os.path import exists
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 st.set_page_config(page_title='Home Price Predictor',
@@ -25,8 +26,10 @@ X = pd.DataFrame(boston.data, columns=boston.feature_names)
 Y = pd.DataFrame(boston.target, columns=["MEDV"])
 
 st.write("""
-# Home Price Predictor
-This app predicts the **Boston Home Price**!
+# Boston Home Price Predictor
+This app predicts the **Boston Home Price** with some regression models implemented in Sklearn and Tensorflow.
+
+GitHub Repository: https://github.com/BoniOloff/house_price_prediction
 """)
 st.write('---')
 
@@ -104,7 +107,7 @@ def larger_model():
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
-if exists('tf_pipeline.pkl'):
+if (exists('tf_pipeline.pkl') and exists('keras_model.h5')):
     # Load pipeline
     pipeline = joblib.load('tf_pipeline.pkl')
     # Load TF model
@@ -127,14 +130,18 @@ else:
     # Save pipeline
     pipeline.named_steps['mlp'].model = None
     joblib.dump(pipeline, 'tf_pipeline.pkl')
+    # Load pipeline
+    pipeline = joblib.load('tf_pipeline.pkl')
+    # Load TF model
+    pipeline.named_steps['mlp'].model = keras.models.load_model('keras_model.h5')
 
 
 prediction_tf = pipeline.predict(df)
 prediction_sklearn = model.predict(df)
 
 st.header("Predicted Values")
-st.write(f'Predicted value with Sklearn: ${prediction_sklearn[0] * 1000:,.2f}')
-st.write(f"Predicted value with Tensorflow: ${prediction_tf * 1000:,.2f}")
+st.write(f'Predicted value with RandomForestRegressor in Sklearn: ${prediction_sklearn[0] * 1000:,.2f}')
+st.write(f"Predicted value with deeplearning regression in Tensorflow: ${prediction_tf * 1000:,.2f}")
 st.write('---')
 
 
@@ -143,15 +150,16 @@ st.write('---')
 sklearn_mae = 0.7788300395256911
 tf_mae = 2.611664370020388
 
-st.header("Performance Evaluation")
-st.write(f'MAE of Sklearn: ${sklearn_mae * 1000:,.2f}')
-st.write(f"MAE of Tensorflow: {tf_mae * 1000:,.2f}")
+st.header('Performance Evaluation')
+st.write('From this model we can see that Random Forest perform better than DeepLearning.')
+st.write(f'- MAE of RandomForestRegressor in Sklearn: ${sklearn_mae * 1000:,.2f}')
+st.write(f'- MAE of Tensorflow: {tf_mae * 1000:,.2f}')
 st.write('---')
 
 # Explaining the model's predictions using SHAP values
 # https://github.com/slundberg/shap
 explainer = shap.TreeExplainer(model)
-shap_values = explainer.shap_values(X)
+shap_values = explainer(X)
 
 st.header('Feature Importance')
 plt.title('Feature importance based on SHAP values')
@@ -162,3 +170,11 @@ st.write('---')
 plt.title('Feature importance based on SHAP values (Bar)')
 shap.summary_plot(shap_values, X, plot_type="bar")
 st.pyplot(bbox_inches='tight')
+
+st.header("References:")
+st.write("""
+- https://github.com/slundberg/shap
+- https://www.youtube.com/watch?v=JwSS70SZdyM&t=97s
+- https://github.com/DavidCico/Boston-House-Prices-With-Regression-Machine-Learning-and-Keras-Deep-Learning
+- https://stackoverflow.com/questions/37984304/how-to-save-a-scikit-learn-pipline-with-keras-regressor-inside-to-disk
+""")
