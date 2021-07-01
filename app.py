@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.ensemble import RandomForestRegressor
 st.set_option('deprecation.showPyplotGlobalUse', False)
+st.set_page_config(page_title='Home Price Predictor', initial_sidebar_state = 'auto')
 
 st.write("""
-# Boston House Price Prediction App
-This app predicts the **Boston House Price**!
+# Home Price Predictor
+This app predicts the **Boston Home Price**!
 """)
 st.write('---')
 
@@ -68,8 +69,7 @@ model.fit(X, Y)
 # Apply Model to Make Prediction
 prediction = model.predict(df)
 
-st.header('Predicted value:')
-st.write(prediction[0])
+st.header(f'Predicted home value: ${prediction[0] * 1000:,}')
 st.write('---')
 
 # Explaining the model's predictions using SHAP values
@@ -86,3 +86,46 @@ st.write('---')
 plt.title('Feature importance based on SHAP values (Bar)')
 shap.summary_plot(shap_values, X, plot_type="bar")
 st.pyplot(bbox_inches='tight')
+
+st.header("Apply Deep Learning with Tensorflow")
+
+# numpy
+import numpy as np
+import pandas as pd
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+dataframe = pd.read_csv("housing.csv", delim_whitespace=True, header=None)
+dataset = dataframe.values
+
+X = dataset[:,0:13]
+Y = dataset[:,13]
+
+def larger_model():
+    # create model
+    model = Sequential()
+    model.add(Dense(13, input_dim=13, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(6, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(1, kernel_initializer='normal'))
+    # Compile model
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
+
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasRegressor(build_fn=larger_model, epochs=50, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+pipeline.fit(X, Y)
+
+pred = pipeline.predict(X)
+print(pred - Y)
+
+# pred = pipeline()
+
+print(X)
