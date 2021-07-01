@@ -162,14 +162,24 @@ explainer = shap.TreeExplainer(model)
 shap_values = explainer(X)
 
 st.header('Feature Importance')
-plt.title('Feature importance based on SHAP values')
-shap.summary_plot(shap_values, X)
-st.pyplot(bbox_inches='tight')
+if exists("gg1.png"):
+    st.image("gg1.png")
+else:
+    plt.title('Feature importance based on SHAP values')
+    shap.summary_plot(shap_values, X)
+    plt.savefig("gg1.png",dpi=150, bbox_inches='tight')
+    st.pyplot(bbox_inches='tight')
 st.write('---')
 
-plt.title('Feature importance based on SHAP values (Bar)')
-shap.summary_plot(shap_values, X, plot_type="bar")
-st.pyplot(bbox_inches='tight')
+if exists("gg2.png"):
+    st.image("gg2.png")
+else:
+    plt.title('Feature importance based on SHAP values (Bar)')
+    shap.summary_plot(shap_values, X, plot_type="bar")
+    plt.savefig("gg2.png",dpi=150, bbox_inches='tight')
+    st.pyplot(bbox_inches='tight')
+st.write('---')
+
 
 st.header("References:")
 st.write("""
