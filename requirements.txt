@@ -1,8 +1,9 @@
-streamlit==0.83.0
-scikit-learn==0.24.1
-tensorflow==2.5.0
-pandas==1.2.4
-shap==0.39.0
-matplotlib==3.3.4
-numpy==1.19.5
-joblib==1.0.1
+streamlit
+pandas
+shap
+base58
+matplotlib
+numpy
+joblib
+scikit-learn
+tensorflow

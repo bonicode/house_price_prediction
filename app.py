@@ -30,6 +30,8 @@ st.write("""
 This app predicts the **Boston Home Price** with some regression models implemented in Sklearn and Tensorflow.
 
 GitHub Repository: https://github.com/BoniOloff/house_price_prediction
+
+Explanation about each input parameters can be found here: https://www.cs.toronto.edu/~delve/data/boston/bostonDetail.html
 """)
 st.write('---')
 
@@ -37,22 +39,22 @@ st.write('---')
 # Header of Specify Input Parameters
 st.sidebar.header('Specify Input Parameters')
 def user_input_features():
-    CRIM = st.sidebar.slider('CRIM', X.CRIM.min(), X.CRIM.max(), X.CRIM.mean())
-    ZN = st.sidebar.slider('ZN', X.ZN.min(), X.ZN.max(), X.ZN.mean())
+    CRIM = st.sidebar.slider('CRIM', X.CRIM.min(), X.CRIM.max(), float(3.6135))
+    ZN = st.sidebar.slider('ZN', X.ZN.min(), X.ZN.max(), float(11.3636))
     INDUS = st.sidebar.slider('INDUS', X.INDUS.min(),
-                              X.INDUS.max(), X.INDUS.mean())
-    CHAS = st.sidebar.slider('CHAS', X.CHAS.min(), X.CHAS.max(), X.CHAS.mean())
-    NOX = st.sidebar.slider('NOX', X.NOX.min(), X.NOX.max(), X.NOX.mean())
-    RM = st.sidebar.slider('RM', X.RM.min(), X.RM.max(), X.RM.mean())
-    AGE = st.sidebar.slider('AGE', X.AGE.min(), X.AGE.max(), X.AGE.mean())
-    DIS = st.sidebar.slider('DIS', X.DIS.min(), X.DIS.max(), X.DIS.mean())
-    RAD = st.sidebar.slider('RAD', X.RAD.min(), X.RAD.max(), X.RAD.mean())
-    TAX = st.sidebar.slider('TAX', X.TAX.min(), X.TAX.max(), X.TAX.mean())
+                              X.INDUS.max(), float(11.1368))
+    CHAS = st.sidebar.slider('CHAS', X.CHAS.min(), X.CHAS.max(), float(0.0692))
+    NOX = st.sidebar.slider('NOX', X.NOX.min(), X.NOX.max(), float(0.5547))
+    RM = st.sidebar.slider('RM', X.RM.min(), X.RM.max(), float(6.2846))
+    AGE = st.sidebar.slider('AGE', X.AGE.min(), X.AGE.max(), float(68.5746))
+    DIS = st.sidebar.slider('DIS', X.DIS.min(), X.DIS.max(), float(3.7950))
+    RAD = st.sidebar.slider('RAD', X.RAD.min(), X.RAD.max(), float(9.5494))
+    TAX = st.sidebar.slider('TAX', X.TAX.min(), X.TAX.max(), float(408.2372))
     PTRATIO = st.sidebar.slider(
-        'PTRATIO', X.PTRATIO.min(), X.PTRATIO.max(), X.PTRATIO.mean())
-    B = st.sidebar.slider('B', X.B.min(), X.B.max(), X.B.mean())
+        'PTRATIO', X.PTRATIO.min(), X.PTRATIO.max(), float(18.4555))
+    B = st.sidebar.slider('B', X.B.min(), X.B.max(), float(256.6740))
     LSTAT = st.sidebar.slider('LSTAT', X.LSTAT.min(),
-                              X.LSTAT.max(), X.LSTAT.mean())
+                              X.LSTAT.max(), float(12.6531))
     data = {'CRIM': CRIM,
             'ZN': ZN,
             'INDUS': INDUS,
@@ -139,9 +141,9 @@ else:
 prediction_tf = pipeline.predict(df)
 prediction_sklearn = model.predict(df)
 
-st.header("Predicted Values")
+st.header("Predicted Values:")
 st.write(f'Predicted value with RandomForestRegressor in Sklearn: ${prediction_sklearn[0] * 1000:,.2f}')
-st.write(f"Predicted value with deeplearning regression in Tensorflow: ${prediction_tf * 1000:,.2f}")
+st.write(f"Predicted value with Deeplearning Regression in Tensorflow: ${prediction_tf * 1000:,.2f}")
 st.write('---')
 
 
@@ -150,21 +152,20 @@ st.write('---')
 sklearn_mae = 0.7788300395256911
 tf_mae = 2.611664370020388
 
-st.header('Performance Evaluation')
+st.header('Performance Evaluation:')
 st.write('From this model we can see that Random Forest perform better than DeepLearning.')
 st.write(f'- MAE of RandomForestRegressor in Sklearn: ${sklearn_mae * 1000:,.2f}')
-st.write(f'- MAE of Tensorflow: {tf_mae * 1000:,.2f}')
+st.write(f'- MAE of Deeplearning Regression in Tensorflow: {tf_mae * 1000:,.2f}')
 st.write('---')
-
-# Explaining the model's predictions using SHAP values
-# https://github.com/slundberg/shap
-explainer = shap.TreeExplainer(model)
-shap_values = explainer(X)
 
 st.header('Feature Importance')
 if exists("gg1.png"):
     st.image("gg1.png")
 else:
+    # Explaining the model's predictions using SHAP values
+    # https://github.com/slundberg/shap
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer(X)
     plt.title('Feature importance based on SHAP values')
     shap.summary_plot(shap_values, X)
     plt.savefig("gg1.png",dpi=150, bbox_inches='tight')
@@ -174,6 +175,10 @@ st.write('---')
 if exists("gg2.png"):
     st.image("gg2.png")
 else:
+    # Explaining the model's predictions using SHAP values
+    # https://github.com/slundberg/shap
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer(X)
     plt.title('Feature importance based on SHAP values (Bar)')
     shap.summary_plot(shap_values, X, plot_type="bar")
     plt.savefig("gg2.png",dpi=150, bbox_inches='tight')
@@ -183,6 +188,7 @@ st.write('---')
 
 st.header("References:")
 st.write("""
+- https://www.cs.toronto.edu/~delve/data/boston/bostonDetail.html
 - https://github.com/slundberg/shap
 - https://www.youtube.com/watch?v=JwSS70SZdyM&t=97s
 - https://github.com/DavidCico/Boston-House-Prices-With-Regression-Machine-Learning-and-Keras-Deep-Learning
