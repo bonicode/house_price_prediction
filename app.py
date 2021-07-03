@@ -146,9 +146,6 @@ st.write(f'Predicted value with RandomForestRegressor in Sklearn: ${prediction_s
 st.write(f"Predicted value with Deeplearning Regression in Tensorflow: ${prediction_tf * 1000:,.2f}")
 st.write('---')
 
-
-# sklearn_mae = np.mean(np.abs(model.predict(X) - Y))
-# tf_mae = np.mean(np.abs(pipeline.predict(X) - Y))
 sklearn_mae = 0.7788300395256911
 tf_mae = 2.611664370020388
 
